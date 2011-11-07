@@ -1,0 +1,22 @@
+{
+    "name": "promise-simple",
+    "version": "0.1.0",
+    "description": "Simple implementation of CommonJS Promiss/A.",
+    "keywords": ["promises", "deferred"],
+    "author": "yo_waka <y.wakahara@gmail.com>
+    "licenses": [{
+        "type": "MIT",
+        "url": "http://www.opensource.org/licenses/mit-license.php"
+    }],
+    "repositories": [{
+        "type": "git",
+        "url": "git://github.com/waka/js-promise-simple.git"
+    }],
+    "maintainers": [{
+        "name": "Yoshimasa Wakahara"
+    }],
+    "main": "./promise-simple",
+    "directories": {
+        "test": "test"
+    }
+}
