@@ -1,59 +1,55 @@
 /**
- * @fileoverview Simple implementation of CommonJS Promiss/A.
+ * @fileoverview Simple implementation of CommonJS Promise/A.
  * @author yo_waka
  */
 (function(define) {
 define([], function() {
     
     /**
-     * Abstract class.
-     * @constructor
+     * Interface Promise/A.
+     * @interface
      */
-    var Promiss = function() {};
+    var Promise = function() {};
 
     /**
      * @param {*} value
      */
-    Promiss.prototype.resolve = function(value) {
-        throw Error('Must be implemented.');
-    };
+    Promise.prototype.resolve;
 
     /**
-     * @param {*} value
+     * @param {*} error
      */
-    Promiss.prototype.reject = function(err) {
-        throw Error('Must be implemented.');
-    };
+    Promise.prototype.reject;
 
     /**
      * @param {Function} callback
      * @param {Function} errback
      */
-    Promiss.prototype.then = function(callback, errback) {
-        throw Error('Must be implemented.');
-    };
+    Promise.prototype.then;
 
 
     /**
      * @param {*=} opt_scope
      * @constructor
+     * @implements {Promise}
      */
     var Deferred = function(opt_scope) {
+        this.state_ = Deferred.State.UNRESOLVED;
         this.chain_ = [];
-        this.scope_ = opt_defaultScope || null;
+        this.scope_ = opt_scope || null;
     };
 
     /**
-     * @type {boolean}
+     * @type {Deferred.State}
      * @private
      */
-    Deferred.prototype.fired_ = false;
+    Deferred.prototype.state_;
 
     /**
-     * @type {boolean}
+     * @type {Array.<>}
      * @private
      */
-    Deferred.prototype.hasError_ = false;
+    Deferred.prototype.chain_;
 
     /**
      * @type {*}
@@ -62,166 +58,63 @@ define([], function() {
     Deferred.prototype.result_;
 
     /**
-     * @type {number}
+     * @type {Object}
      * @private
      */
-    Deferred.prototype.paused_ = 0;
+    Deferred.prototype.scope_;
 
     /**
-     * @type {number}
-     * @private
+     * @override
      */
-    Deferred.prototype.unhandledExceptionTimeoutId_;
-
-    /**
-     * @param {*} result The result of the operation.
-     */
-    Deferred.prototype.callback = function(result) {
-        this.resback_(true, result);
+    Deferred.prototype.then = function(callback, errback) {
+        var deferred = new Deferred(this.scope_);
     };
 
     /**
-     * @param {*} result The error result.
+     * @override
      */
-    Deferred.prototype.errback = function(result) {
-        this.resback_(false, result);
+    Deferred.prototype.resolve = function(value) {
+        this.state_ = Deferred.State.RESOLVED;
     };
 
     /**
-     * @param {boolean} isSuccess
-     * @param {*} res The result.
-     * @private
+     * @override
      */
-    Deferred.prototype.resback_ = function(isSuccess, res) {
-        this.fired_ = true;
-        this.result_ = res;
-        this.hasError_ = !isSuccess;
-        this.fired_();
+    Deferred.prototype.reject = function(error) {
+        this.state_ = Deferred.State.REJECTED;
     };
 
-    /**
-     * @param {boolean} isSuccess
-     * @param {*} res The result.
-     */
-    Deferred.prototype.continue_ = function(isSuccess, res) {
-        this.resback_(isSuccess, res);
-        this.unpause_();
-    };
 
     /**
+     * @type {enum}
      */
-    Deferred.prototype.cancel = function() {
-        if (this.hasFired()) {
-            return;
-        }
-        if (this.result_ instanceof Deferred) {
-            this.result_.cancel();
-        }
+    Deferred.State = {
+        UNRESOLVED: 'unresolved',
+        RESOLVED: 'resolved',
+        REJECTED: 'rejected'
     };
 
-    /**
-     * Pauses this Deferred.
-     * @private
-     */
-    Deferred.prototype.pause_ = function() {
-        this.paused_++;
-    };
 
     /**
-     * @param {Function} cb The function to be called on successful result.
-     * @param {Function} eb The function to be called on unsuccessful result.
-     * @param {Object=} opt_scope
+     * @param {Array.<Function|Deferred>|Deferred|Function} args
      * @return {Deferred}
+     * @static
      */
-    Deferred.prototype.addCallbacks = function(cb, eb, opt_scope) {
-        this.chain_.push([cb, eb, opt_scope]);
-        if (this.hasFired()) {
-            this.fire_();
-        }
-        return this;
-    };
+    Deferred.when = function(args) {
+        var d = new Deferred();
 
-    /**
-     * @return {boolean} Whether callback or errback has been called on.
-     */
-    Deferred.prototype.hasFired = function() {
-        return this.fired_;
-    };
-
-    /**
-     * @param {*} res The current callback result.
-     * @return {boolean} Whether the current result is an error.
-     * @private
-     */
-    Deferred.prototype.isError_ = function(res) {
-        return res instanceof Error;
-    };
-
-    /**
-     * @return {boolean} Whether an errback has been registered.
-     * @private
-     */
-    Deferred.prototype.hasErrback_ = function() {
-        return this.chain_.some(function(entry) {
-            return typeof entry[1] === 'function';
-        });
-    };
-
-    /**
-     * @private
-     */
-    Deferred.prototype.fire_ = function() {
-        if (this.unhandledExceptionTimeoutId_ && this.hasFired() && this.hasErrback_()) {
-            clearTimeout(this.unhandledExceptionTimeoutId_);
-            delete this.unhandledExceptionTimeoutId_;
+        if (args instanceof Array) {
+        } else if (args instanceof Deferred) {
+        } else if (args instanceof Function) {
+        } else {
+            throw Error('Illegal arguments');
         }
 
-        var res = this.result_;
-        var unhandledException = false;
-
-        while (this.chain_.length) {
-            var entry = this.chain_.shift();
-            var cb = entry[0];
-            var eb = entry[1];
-            var scope = entry[2];
-
-            var f = this.hasError() ? eb : cb;
-            if (f) {
-                try {
-                    var ret = f.call(scope || this.scope_, res);
-                    // If no result, then use previous result.
-                    if (typeof ret === 'undefined') {
-                        this.hasError_ = this.hasError_ &&
-                            (ret === res || this.isError_(ret));
-                        this.result_ = res = ret;
-                    }
-                    if (res instanceof Deferred) {
-                        this.pause_();
-                    }
-                } catch (e) {
-                    res = e;
-                    this.hasError_ = true;
-                    if (!this.hasErrback_()) {
-                        unhandledException = true;
-                    }
-                }
-            }
-        }
-        this.result_ = res;
-
-        if (isChained && this.paused_ > 0) {
-            res.addCallbacks(
-                this.continue_.bind(this, true),
-                this.continue_.bind(this, false));
-        }
-        if (unhandledException) {
-            this.unhandledExceptionTimeoutId_ = setTimeout(function() {
-                throw res;
-            }, 0);
-        }
+        return d;
     };
 
-    return Deferred;
+    
+    return /* @type {Deferred} */Deferred;
 
 }); // define
 })(typeof define !== 'undefined' ?
