@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>js-primise-simple test</title>
+    <script src="../promise-simple.js"></script>
+  </head>
+  <body>
+    <script>
+      var d = new Deferred();
+      d.then(function() {
+        console.log("ok");
+        return "hoge";
+      })
+      .then(function(res) {
+        console.log(res);
+        throw Error("bra");
+      })
+      .then(null,
+      function(err) {
+        console.log(err.message);
+      });
+      d.resolve();
+
+      var d2 = new Deferred();
+      d2.then(null,
+      function(err) {
+        console.log(err.message);
+      });
+      d2.reject(new Error("has error"));
+    </script>
+  </body>
+</html>
