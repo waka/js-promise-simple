@@ -112,6 +112,33 @@ define([], function() {
     };
 
     /**
+     * Create async deferred chain.
+     *
+     * @param {!Function} fn
+     * @param {number=} opt_interval
+     * @return {Deferred}
+     */
+    Deferred.prototype.next = function(fn, opt_interval) {
+        var timerId = null;
+        var interval = opt_interval || 10;
+
+        // create async deferred.
+        var nextDeferred = new Deferred(this);
+        nextDeferred.then(fn);
+
+        // Add in original callback chain
+        this.then(function() {
+            var self = this;
+            timerId = setTimeout(function() {
+                nextDeferred.resolve(self.result_);
+            }, interval);
+        });
+
+        return nextDeferred;
+    };
+
+
+    /**
      * @param {*} value
      * @private
      */
@@ -130,7 +157,7 @@ define([], function() {
                 }
             }
         }
-    }
+    };
 
 
     /**
@@ -145,18 +172,29 @@ define([], function() {
 
 
     /**
+     * @return {boolean}
+     * @static
+     */
+    Deferred.isPromise = function(arg) {
+        return (arg && typeof arg.then === 'function');
+    };
+
+    /**
      * @param {...*} var_args
      * @return {Deferred}
      * @static
      */
     Deferred.when = function(var_args) {
         var d = new Deferred();
+        var results = [];
 
-        Array.prototype.slice(arguments).forEach(function(arg) {
-            if (arg instanceof Deferred) {
+        [].slice.call(arguments, 0).forEach(function(arg) {
+            if (Deferred.isPromise(arg)) {
                 d = d.chainDeferred(arg);
             } else if (arg instanceof Function) {
-                d = d.then(arg);
+                arg.then(function(result) {
+                    results.push(result);
+                });
             } else {
                 d = d.then(function(res) {
                     return arg;
