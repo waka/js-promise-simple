@@ -4,30 +4,104 @@
     <meta charset="utf-8" />
     <title>js-primise-simple test</title>
     <script src="../promise-simple.js"></script>
+    <script src="test-promise-simple.js"></script>
   </head>
   <body>
-    <script>
-      var d = new Deferred();
-      d.then(function() {
-        console.log("ok");
-        return "hoge";
-      })
-      .then(function(res) {
-        console.log(res);
-        throw Error("bra");
-      })
-      .then(null,
-      function(err) {
-        console.log(err.message);
-      });
-      d.resolve();
+    <div class="contents">
+      <div id="summaries"></div>
+      <div id="results"></div>
+    </div>
 
-      var d2 = new Deferred();
-      d2.then(null,
-      function(err) {
-        console.log(err.message);
-      });
-      d2.reject(new Error("has error"));
+    <script>
+      function assertEquals(expect, value) {
+        if (expect !== value) {
+          var msg = 'Not equal! expect: ' + expect + ', value: ' + value;
+          console.log(msg);
+          throw Error(msg);
+        }
+      }
+
+      var callBackCount = 0;
+
+      function setUp() {
+        callBackCount = 0;
+      }
+
+      function tearDown() {
+        callBackCount = 0;
+      }
+
+      function listener() {
+        callBackCount++;
+      }
+
+      function testNext() {
+        var d1 = new Deferred();
+        d1.then(function() {
+          listener();
+          assertEquals(1, callBackCount);
+        })
+        .next(function() {
+          listener();
+          assertEquals(4, callBackCount);
+        })
+        .then(function() {
+          listener();
+          assertEquals(5, callBackCount);
+        })
+        .next(function() {
+          listener();
+          assertEquals(6, callBackCount);
+        });
+
+        var d2 = new Deferred();
+        d2.then(function() {
+          listener();
+          assertEquals(2, callBackCount);
+        })
+        .then(function() {
+          listener();
+          assertEquals(3, callBackCount);
+        });
+
+        d1.resolve();
+        d2.resolve();
+      }
+
+      function testWhen() {
+        var d1 = new Deferred()
+        .then(function() {
+          return 1;
+        });
+
+        var d2 = new Deferred()
+        .then(function() {
+          return 2;
+        });
+
+        var obj1 = {a: 'a'};
+        
+        Deferred.when(d1, d2, obj1)
+        .then(function(results) {
+          assertEquals(1, results[0]);
+          assertEquals(2, results[1]);
+          assertEquals('a', results[2].a);
+        });
+
+        var d3 = new Deferred()
+        .then(function() {
+          throw Error('Error has occured');
+        });
+
+        Deferred.when(d3)
+        .then(function(results) {
+        }, function(error) {
+          assertEquals('Error has occured', error.message);
+        });
+      }
+
+      testNext();
+      testWhen();
     </script>
   </body>
 </html>

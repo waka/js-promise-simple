@@ -12,7 +12,7 @@ define([], function() {
 
     
     /**
-     * Interface Promise/A.
+     * Promise/A interface.
      * @interface
      */
     var Promise = function() {};
@@ -35,6 +35,8 @@ define([], function() {
 
 
     /**
+     * Implemented Promise/A interface.
+     *
      * @param {*=} opt_scope
      * @constructor
      * @implements {Promise}
@@ -114,21 +116,22 @@ define([], function() {
     /**
      * Create async deferred chain.
      *
-     * @param {!Function} fn
+     * @param {Function} callback
+     * @param {Function} callback
      * @param {number=} opt_interval
      * @return {Deferred}
      */
-    Deferred.prototype.next = function(fn, opt_interval) {
+    Deferred.prototype.next = function(callback, errback, opt_interval) {
         var timerId = null;
         var interval = opt_interval || 10;
 
         // create async deferred.
         var nextDeferred = new Deferred(this);
-        nextDeferred.then(fn);
+        nextDeferred.then(callback, errback);
 
         // Add in original callback chain
+        var self = this;
         this.then(function() {
-            var self = this;
             timerId = setTimeout(function() {
                 nextDeferred.resolve(self.result_);
             }, interval);
@@ -143,17 +146,17 @@ define([], function() {
      * @private
      */
     Deferred.prototype.fire_ = function(value) {
-        var res = (typeof value !== 'undefined') ? value : this.result_;
+        this.result_ = (typeof value !== 'undefined') ? value : this.result_;
 
         while(this.chain_.length) {
             var entry = this.chain_.shift();
             var fn = (this.state_ === Deferred.State.REJECTED) ? entry[1] : entry[0];
             if (fn) {
                 try {
-                    this.result_ = res = fn.call(this.scope_, res);
+                    this.result_ = fn.call(this.scope_, this.result_);
                 } catch (e) {
                     this.state_ = Deferred.State.REJECTED;
-                    this.result_ = res = e;
+                    this.result_ = e;
                 }
             }
         }
@@ -180,29 +183,46 @@ define([], function() {
     };
 
     /**
-     * @param {...*} var_args
+     * @param {..*} var_args
      * @return {Deferred}
      * @static
      */
     Deferred.when = function(var_args) {
-        var d = new Deferred();
+        var deferred = new Deferred();
+        var args = [].slice.call(arguments, 0);
         var results = [];
 
-        [].slice.call(arguments, 0).forEach(function(arg) {
-            if (Deferred.isPromise(arg)) {
-                d = d.chainDeferred(arg);
-            } else if (arg instanceof Function) {
-                arg.then(function(result) {
-                    results.push(result);
-                });
-            } else {
-                d = d.then(function(res) {
-                    return arg;
-                });
+        var callback = function(value) {
+            results.push(value);
+            if (args.length === results.length) {
+                deferred.resolve(results);
             }
-        });
+        };
 
-        return d;
+        var errback = function(error) {
+            deferred.reject(error);
+        };
+
+        for (var i = 0, len = args.length; i < len; i++) {
+            var arg = args[i];
+            if (Deferred.isPromise(arg)) {
+                arg.then(callback, errback).resolve();
+            } else if (arg instanceof Function) {
+                (new Deferred())
+                .then(arg)
+                .then(callback, errback)
+                .resolve();
+            } else {
+                (new Deferred())
+                .then(function() {
+                    return arg;
+                })
+                .then(callback, errback)
+                .resolve();
+            }
+        };
+
+        return deferred;
     };
 
     
