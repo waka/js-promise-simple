@@ -1,22 +1,19 @@
 {
     "name": "promise-simple",
-    "version": "0.1.0",
     "description": "Simple implementation of CommonJS Promiss/A.",
-    "keywords": ["promises", "deferred"],
-    "author": "yo_waka <y.wakahara@gmail.com>
-    "licenses": [{
-        "type": "MIT",
-        "url": "http://www.opensource.org/licenses/mit-license.php"
-    }],
+    "author": "Yoshimasa Wakahara <y.wakahara@gmail.com>
+    "version": "0.1.0",
     "repositories": [{
         "type": "git",
         "url": "git://github.com/waka/js-promise-simple.git"
     }],
-    "maintainers": [{
-        "name": "Yoshimasa Wakahara"
-    }],
+    "devDependencies": {
+        "nodeunit": ">= 0.6.2"
+    },
     "main": "./promise-simple",
-    "directories": {
-        "test": "test"
-    }
+    "keywords": ["promise", "deferred", "async"],
+    "licenses": [{
+        "type": "MIT",
+        "url": "http://www.opensource.org/licenses/mit-license.php"
+    }]
 }

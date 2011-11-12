@@ -2,6 +2,7 @@
  * @fileoverview Simple implementation of CommonJS Promise/A.
  * @author yo_waka
  */
+
 (function(define) {
 define([], function() {
 
@@ -15,31 +16,31 @@ define([], function() {
      * Promise/A interface.
      * @interface
      */
-    var Promise = function() {};
+    var IPromise = function() {};
 
     /**
      * @param {*} value
      */
-    Promise.prototype.resolve;
+    IPromise.prototype.resolve;
 
     /**
      * @param {*} error
      */
-    Promise.prototype.reject;
+    IPromise.prototype.reject;
 
     /**
      * @param {Function} callback
      * @param {Function} errback
      */
-    Promise.prototype.then;
+    IPromise.prototype.then;
 
 
     /**
      * Implemented Promise/A interface.
      *
-     * @param {*=} opt_scope
+     * @param {Object=} opt_scope
      * @constructor
-     * @implements {Promise}
+     * @implements {IPromise}
      */
     var Deferred = function(opt_scope) {
         this.state_ = Deferred.State.UNRESOLVED;
@@ -73,6 +74,7 @@ define([], function() {
     Deferred.prototype.result_;
 
     /**
+     * @return {Deferred}
      * @override
      */
     Deferred.prototype.then = function(callback, errback, progback) {
@@ -117,27 +119,32 @@ define([], function() {
      * Create async deferred chain.
      *
      * @param {Function} callback
-     * @param {Function} callback
+     * @param {Function} errback
      * @param {number=} opt_interval
      * @return {Deferred}
      */
     Deferred.prototype.next = function(callback, errback, opt_interval) {
-        var timerId = null;
         var interval = opt_interval || 10;
 
         // create async deferred.
-        var nextDeferred = new Deferred(this);
-        nextDeferred.then(callback, errback);
+        var deferred = new Deferred(this);
+        deferred.then(callback, errback);
 
         // Add in original callback chain
-        var self = this;
-        this.then(function() {
-            timerId = setTimeout(function() {
-                nextDeferred.resolve(self.result_);
-            }, interval);
-        });
+        this.then(
+            function(value) {
+                setTimeout(function() {
+                    deferred.resolve(value);
+                }, interval);
+            },
+            function(error) {
+                setTimeout(function() {
+                    deferred.reject(error);
+                }, interval);
+            }
+        );
 
-        return nextDeferred;
+        return deferred;
     };
 
 
@@ -146,17 +153,17 @@ define([], function() {
      * @private
      */
     Deferred.prototype.fire_ = function(value) {
-        this.result_ = (typeof value !== 'undefined') ? value : this.result_;
+        var res = this.result_ = (typeof value !== 'undefined') ? value : this.result_;
 
         while(this.chain_.length) {
             var entry = this.chain_.shift();
             var fn = (this.state_ === Deferred.State.REJECTED) ? entry[1] : entry[0];
             if (fn) {
                 try {
-                    this.result_ = fn.call(this.scope_, this.result_);
+                    res = this.result_ = fn.call(this.scope_, res);
                 } catch (e) {
                     this.state_ = Deferred.State.REJECTED;
-                    this.result_ = e;
+                    res = this.result_ = e;
                 }
             }
         }
@@ -164,7 +171,7 @@ define([], function() {
 
 
     /**
-     * @type {enum}
+     * @enum {string}
      */
     Deferred.State = {
         UNRESOLVED: 'unresolved',
@@ -178,16 +185,17 @@ define([], function() {
      * @return {boolean}
      * @static
      */
-    Deferred.isPromise = function(arg) {
+    var isPromise = function(arg) {
         return (arg && typeof arg.then === 'function');
     };
+
 
     /**
      * @param {..*} var_args
      * @return {Deferred}
      * @static
      */
-    Deferred.when = function(var_args) {
+    var when = function(var_args) {
         var deferred = new Deferred();
         var args = [].slice.call(arguments, 0);
         var results = [];
@@ -205,9 +213,12 @@ define([], function() {
 
         for (var i = 0, len = args.length; i < len; i++) {
             var arg = args[i];
-            if (Deferred.isPromise(arg)) {
-                arg.then(callback, errback).resolve();
-            } else if (arg instanceof Function) {
+
+            if (isPromise(arg)) {
+                arg
+                .then(callback, errback)
+                .resolve();
+            } else if (typeof arg === 'function') {
                 (new Deferred())
                 .then(arg)
                 .then(callback, errback)
@@ -226,7 +237,16 @@ define([], function() {
     };
 
     
-    return /* @type {Deferred} */Deferred;
+    return {
+        /**
+         * @param {*=} opt_scope
+         */
+        defer: function(opt_scope) {
+            return new Deferred(opt_scope);
+        },
+        isPromise: isPromise,
+        when: when
+    };
 
 }); // define
 })(typeof define !== 'undefined' ?
@@ -236,5 +256,5 @@ define([], function() {
     // If no define or module, attach to current context.
     typeof module !== 'undefined' ?
     function(deps, factory) { module.exports = factory(); } :
-    function(deps, factory) { this.Deferred = factory(); }
+    function(deps, factory) { this['Promise'] = factory(); }
 );
