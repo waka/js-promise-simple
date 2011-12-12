@@ -239,6 +239,7 @@ define([], function() {
     
     return {
         /**
+         * Factory method.
          * @param {*=} opt_scope
          */
         defer: function(opt_scope) {
