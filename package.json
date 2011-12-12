@@ -1,7 +1,7 @@
 {
     "name": "promise-simple",
     "description": "Simple implementation of CommonJS Promiss/A.",
-    "author": "Yoshimasa Wakahara <y.wakahara@gmail.com>
+    "author": "Yoshimasa Wakahara <y.wakahara@gmail.com>",
     "version": "0.1.0",
     "repositories": [{
         "type": "git",
