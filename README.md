@@ -2,50 +2,56 @@
 
 The simple implementation of CommonJS Promises/A.
 
+
 ## Usage
 
-### For browser side
+### From node.js
 
-    <script src="/path/promise-simple.js"></script>
-    <script>
-    var asyncFunc1 = function() {
-        var d = Promise.defer();
-        setTimeout(function() {
-            d.resolve("first");
-        }, 1000);
-        return d;
-    };
-    var asyncFunc2 = function() {
-        var d = Promise.defer();
-        setTimeout(function() {
-            d.resolve("second");
-        }, 1000);
-        return d;
-    }
+```javascript
+var Promise = require('promise-simple');
 
-    Promise.when(asyncFunc1, asyncFunc2)
-    .then(function(results) {
-        console.log(results[0]); // "first"
-        console.log(results[1]); // "second"
-    });
-    </script>
+Promise.defer()
+.next(function() {
+  return "ok"; // call after 1000ms.
+}, 1000)
+.next(function(res) {
+  console.log(res); // call after 2000ms, and res is "ok"
+}, 2000);
 
-#### Testing
+### From browser side javascript
 
-Open test/promise-simple-test.html by some browser.
+'''html
+<script src="/path/to/promise-simple.js"></script>
+```
 
-### For node.js
+```javascript
+var asyncFunc1 = function() {
+  var d = Promise.defer();
+  setTimeout(function() {
+    d.resolve("first");
+  }, 1000);
+  return d;
+};
+var asyncFunc2 = function() {
+  var d = Promise.defer();
+  setTimeout(function() {
+    d.resolve("second");
+  }, 1000);
+  return d;
+};
 
-    var Promise = require('promise-simple');
+Promise.when(asyncFunc1, asyncFunc2).then(function(results) {
+  console.log(results[0]); // "first"
+  console.log(results[1]); // "second"
+});
+```
 
-    Promise.defer()
-    .next(function() {
-        return "ok"; // call after 1000ms.
-    }, 2000);
-    .next(function(res) {
-        console.log(res); // call after more 2000ms, and res is "ok"
-    }, 2000);
+### Testing
 
-#### Testing
+Using mocha from Node.js.
 
-  $ nodeunit test/node-promise-simple-test.js
+```sh
+$npm test
+```
+
+or open "test/browser/promise-simple\_test.html" by some browser.

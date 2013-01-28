@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>js-primise-simple test</title>
+    <script src="../../promise-simple.js"></script>
+    <script src="./testcase.js"></script>
+  </head>
+  <body>
+    <script>
+    testCase('Promise test', {
+      testResolve: function() {
+        var d1 = Promise.defer();
+        assert.equals(false, d1.isResolved());
+        d1.resolve();
+        assert.equals(true, d1.isResolved());
+
+        var d2 = Promise.defer();
+        d2.reject();
+        assert.equals(false, d2.isResolved());
+      },
+
+      testReject: function() {
+        var d1 = Promise.defer();
+        assert.equals(false, d1.isRejected());
+        d1.reject();
+        assert.equals(true, d1.isRejected());
+
+        var d2 = Promise.defer();
+        d2.resolve();
+        assert.equals(false, d2.isRejected());
+      },
+
+      testNext: function() {
+        var callBackCount = 0;
+        function listener() {
+          callBackCount++;
+        }
+
+        var d1 = Promise.defer();
+        d1.then(function() {
+          listener();
+          assert.equals(1, callBackCount);
+        })
+        .next(function() {
+          listener();
+          assert.equals(4, callBackCount);
+        })
+        .then(function() {
+          listener();
+          assert.equals(5, callBackCount);
+        })
+        .next(function() {
+          listener();
+          assert.equals(6, callBackCount);
+        });
+
+        var d2 = Promise.defer();
+        d2.then(function() {
+          listener();
+          assert.equals(2, callBackCount);
+        })
+        .then(function() {
+          listener();
+          assert.equals(3, callBackCount);
+        });
+
+        d1.resolve();
+        d2.resolve();
+      },
+
+      testWhen: function() {
+        var d1 = Promise.defer()
+        .then(function() {
+          return 1;
+        });
+
+        var d2 = Promise.defer()
+        .next(function() {
+          return 2;
+        });
+
+        var obj1 = {a: 'a'};
+
+        Promise.when(d1, d2, obj1)
+        .then(function(results) {
+          assert.equals(3, results.length);
+          assert.equals(1, results[0]);
+          assert.equals(2, results[1]);
+          assert.equals('a', results[2].a);
+        });
+
+        var d3 = Promise.defer()
+        .then(function() {
+          throw Error('Error has occured');
+        });
+
+        Promise.when(d3)
+        .then(
+          function(results) {},
+          function(error) {
+            assert.equals('Error has occured', error.message);
+          }
+        );
+      }
+    });
+    </script>
+  </body>
+</html>
