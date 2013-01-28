@@ -17,6 +17,7 @@ Promise.defer()
 .next(function(res) {
   console.log(res); // call after 2000ms, and res is "ok"
 }, 2000);
+```
 
 ### From browser side javascript
 
