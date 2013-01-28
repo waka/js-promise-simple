@@ -21,7 +21,7 @@ Promise.defer()
 
 ### From browser side javascript
 
-'''html
+```html
 <script src="/path/to/promise-simple.js"></script>
 ```
 
