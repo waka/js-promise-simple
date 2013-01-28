@@ -5,10 +5,10 @@
   "author": "Yoshimasa Wakahara <y.wakahara@gmail.com>",
   "license": "MIT-License",
   "keywords": ["promise", "deferred", "async", "commonjs"],
-  "repositories": [{
+  "repository": {
     "type": "git",
     "url": "https://github.com/waka/js-promise-simple.git"
-  }],
+  },
   "main": "./promise-simple",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
